@@ -1,0 +1,59 @@
+#include "led.h"
+#include "delay.h"
+#include "sys.h"
+#include "usart.h"
+#include "lcd.h"
+#include "key.h"  
+#include "24cxx.h" 
+#include "myiic.h"
+#include "touch.h" 
+#include "GUI.h"
+//#include "usmart.h"
+#include "adc.h"
+#include "dac.h"
+#include "stm32f10x_dma.h"
+#include "wave.h"
+
+void Inits(void);//初始化
+DAC_WAVE_Typedef DAC_SETTING;
+
+ int main(void)
+ { 
+	u8 state_flag = 0;
+	u8 key_value = 0;
+	POINT_COLOR=RED;//设置字体为红色 
+	Inits();
+	DMA_Cmd(DMA1_Channel1,ENABLE);  
+	LCD_Clear(WHITE);//清屏
+	 while(1)
+	 {
+		 key_value = KEY_Scan(0);		//得到键值
+		 GUI_draw_key();
+		 GUI_scan();
+	 }
+}
+
+void Inits()
+{
+	delay_init();	    	 //延时函数初始化	  
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //设置NVIC中断分组2:2位抢占优先级，2位响应优先级
+	uart_init(9600);	 	//串口初始化为9600
+	LED_Init();		  		//初始化与LED连接的硬件接口
+	lcddev.dir = 1;			//横屏
+	tp_dev.touchtype = 0x81;//电阻屏，横屏
+	LCD_Init();			   	//初始化LCD 
+	KEY_Init();				//按键初始化		 	
+	tp_dev.init();			//触摸屏初始化
+	//usmart_dev.init(72); 	//初始化USMART		
+	Adc_Init();
+	DAC_SETTING.WAVE_P = sin_wave;
+	DAC_SETTING.HZ=1000;
+	Wave_Init(&DAC_SETTING);
+	
+ 	mem_init();				//初始化内存池	    
+ 	exfuns_init();			//为fatfs相关变量申请内存  
+	f_mount(fs[0],"0:",1); 	//挂载SD卡 
+ 	f_mount(fs[1],"1:",1); 	//挂载FLASH.
+	font_init();
+}
+
